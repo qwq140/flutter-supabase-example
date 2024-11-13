@@ -88,3 +88,27 @@ https://supabase.com/docs/reference/dart/select
     }
   }
 ```
+
+### realtime
+https://supabase.com/docs/reference/dart/stream
+```dart
+  void listenTodoChanges() {
+    supabase
+        .from('todo')
+        .stream(primaryKey: ['id'])
+        .order('created_at', ascending: false)
+        .listen(
+          (data) {
+            setState(() {
+              todos = data
+                  .map(
+                    (e) => TodoModel.fromJson(e),
+                  )
+                  .toList();
+            });
+          },
+        );
+  }
+```
+- `todo` 테이블을 구독하고 있고, 해당 테이블의 데이터가 변경될 때마다 `listen`내부의 콜백이 실행된다.
+- realtime을 사용하려면 `supabase`에서 해당 테이블을 `realtime enable` 설정을 해줘야한다.

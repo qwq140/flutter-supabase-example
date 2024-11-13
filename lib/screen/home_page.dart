@@ -18,11 +18,15 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     supabase = Supabase.instance.client;
-    loadTodos();
+    // loadTodos();
+    listenTodoChanges();
   }
 
   void loadTodos() async {
-    var response = await supabase.from('todo').select().order('created_at', ascending: false);
+    var response = await supabase
+        .from('todo')
+        .select()
+        .order('created_at', ascending: false);
     if (response.isNotEmpty) {
       setState(() {
         todos = response
@@ -34,18 +38,48 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void listenTodoChanges() {
+    supabase
+        .from('todo')
+        .stream(primaryKey: ['id'])
+        .order('created_at', ascending: false)
+        .listen(
+          (data) {
+            setState(() {
+              todos = data
+                  .map(
+                    (e) => TodoModel.fromJson(e),
+                  )
+                  .toList();
+            });
+          },
+        );
+  }
+
   void updateCompleted(int id, bool completed) async {
-    List<Map<String, dynamic>> result = await supabase.from('todo').update({'completed' : completed}).eq('id', id).select();
+    List<Map<String, dynamic>> result = await supabase
+        .from('todo')
+        .update({'completed': completed})
+        .eq('id', id)
+        .select();
     TodoModel todoResult = TodoModel.fromJson(result.first);
     setState(() {
-      todos = todos.map((e) => e.id == todoResult.id ? todoResult : e,).toList();
+      todos = todos
+          .map(
+            (e) => e.id == todoResult.id ? todoResult : e,
+          )
+          .toList();
     });
   }
 
   void deleteTodo(int id) async {
     await supabase.from('todo').delete().eq('id', id);
     setState(() {
-      todos = todos.where((e) => e.id != id,).toList();
+      todos = todos
+          .where(
+            (e) => e.id != id,
+          )
+          .toList();
     });
   }
 
@@ -59,18 +93,26 @@ class _HomePageState extends State<HomePage> {
         children: todos
             .map(
               (e) => ListTile(
-                onTap: (){
-                  showTodoBottomSheet(context: context, todo: e, callback: (TodoModel todo) {
-                    setState(() {
-                      todos = todos.map((e) => e.id == todo.id ? todo : e,).toList();
-                    });
-                  },);
+                onTap: () {
+                  showTodoBottomSheet(
+                    context: context,
+                    todo: e,
+                    // callback: (TodoModel todo) {
+                    //   setState(() {
+                    //     todos = todos
+                    //         .map(
+                    //           (e) => e.id == todo.id ? todo : e,
+                    //         )
+                    //         .toList();
+                    //   });
+                    // },
+                  );
                 },
                 leading: Checkbox(
                   value: e.completed,
                   onChanged: (value) {
                     // update 하기
-                    if(value != null) {
+                    if (value != null) {
                       updateCompleted(e.id, value);
                     }
                   },
@@ -89,11 +131,14 @@ class _HomePageState extends State<HomePage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          showTodoBottomSheet(context: context, callback: (TodoModel todo) {
-            setState(() {
-              todos = [todo, ...todos];
-            });
-          });
+          showTodoBottomSheet(
+            context: context,
+            // callback: (TodoModel todo) {
+            //   setState(() {
+            //     todos = [todo, ...todos];
+            //   });
+            // },
+          );
         },
         child: const Icon(Icons.add),
       ),
