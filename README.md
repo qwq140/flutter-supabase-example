@@ -35,21 +35,56 @@ URL과 KEY는 Supabase 해당 프로젝트의 setting에서 확인할 수 있다
 ![](readme/image04.png)
 
 
-### 데이터 insert
+### insert
 https://supabase.com/docs/reference/dart/insert
 ```dart
   void onSave() async {
-    if(!formKey.currentState!.validate()) return;
-    formKey.currentState!.save();
+      // ...
+      Map<String, dynamic> data = {'content': content};
+      
+      // ...
+        List<Map<String,dynamic>> result = await Supabase.instance.client.from('todo').insert(data).select();
+      // ...
+  }
+```
 
-    Map<String, dynamic> data = {
-      'content' : content
-    };
 
-    // 저장 로직
-    await Supabase.instance.client.from('todo').insert(data);
+### update
+https://supabase.com/docs/reference/dart/update
+```dart
+  void updateCompleted(int id, bool completed) async {
+    List<Map<String, dynamic>> result = await supabase.from('todo').update({'completed' : completed}).eq('id', id).select();
+    TodoModel todoResult = TodoModel.fromJson(result.first);
+    setState(() {
+      todos = todos.map((e) => e.id == todoResult.id ? todoResult : e,).toList();
+    });
+  }
+```
 
+### delete
+https://supabase.com/docs/reference/dart/delete
+```dart
+  void deleteTodo(int id) async {
+    await supabase.from('todo').delete().eq('id', id);
+    setState(() {
+      todos = todos.where((e) => e.id != id,).toList();
+    });
+  }
+```
 
-    Navigator.of(context).pop();
+### select
+https://supabase.com/docs/reference/dart/select
+```dart
+  void loadTodos() async {
+    var response = await supabase.from('todo').select().order('created_at', ascending: false);
+    if (response.isNotEmpty) {
+      setState(() {
+        todos = response
+            .map(
+              (e) => TodoModel.fromJson(e),
+            )
+            .toList();
+      });
+    }
   }
 ```
